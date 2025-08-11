@@ -554,8 +554,8 @@ public class TokenValidationHandler {
                 boolean isCrossSubOrgTokenIntrospectionAllowed
                         = OAuthServerConfiguration.getInstance().isCrossSubOrgTokenIntrospectionAllowed();
                 if (!isCrossTenantTokenIntrospectionAllowed && accessTokenDO != null &&
-                        !tenantDomain.equalsIgnoreCase(accessTokenDO.getAuthzUser().getTenantDomain())
-                        || !isFragmentApp) {
+                        (!tenantDomain.equalsIgnoreCase(accessTokenDO.getAuthzUser().getTenantDomain())
+                        || !isFragmentApp)) {
                     if (StringUtils.isEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
                         throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
                     } else if (!isCrossSubOrgTokenIntrospectionAllowed) {
