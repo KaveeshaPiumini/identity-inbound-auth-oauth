@@ -542,6 +542,10 @@ public class TokenValidationHandler {
                     ServiceProviderProperty[] serviceProviderProperties = OAuth2Util.getServiceProvider(
                             accessTokenDO.getConsumerKey(), appTenantDomain).getSpProperties();
                     isFragmentApp = isFragmentApp(serviceProviderProperties);
+                    // If not a fragment app, set tenantDomain to the application's tenant domain
+                    if (!isFragmentApp) {
+                        tenantDomain = appTenantDomain;
+                    }
                 }
 
                 boolean isCrossTenantTokenIntrospectionAllowed
@@ -553,13 +557,20 @@ public class TokenValidationHandler {
                         StringUtils.isEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
                     throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
                 }
-
                 // If not a fragment app, tenantDomain should be the same as the app tenant domain. Else, it should be
                 // the tenant domain of the application-created organization.
                 if (!isCrossTenantTokenIntrospectionAllowed || !isCrossSubOrgTokenIntrospectionAllowed) {
-                    if (!isFragmentApp && !tenantDomain.equalsIgnoreCase(appTenantDomain)) {
-                        throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
-                    } else if (isFragmentApp && !tenantDomain.equalsIgnoreCase(
+                    if (!isFragmentApp &&
+                            tenantDomain.equalsIgnoreCase(appTenantDomain) &&
+                            OrganizationManagementUtil.isOrganization(appTenantDomain)) {
+                        validateTokenIntrospectionForSubOrgs(
+                                OAuthComponentServiceHolder.getInstance().getOrganizationManager()
+                                        .resolveOrganizationId(accessTokenDO.getAuthzUser().getTenantDomain()));
+                    } else if (!isFragmentApp &&
+                            tenantDomain.equalsIgnoreCase(appTenantDomain) &&
+                            StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
+                        validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
+                    } else if (!tenantDomain.equalsIgnoreCase(
                             accessTokenDO.getAuthzUser().getTenantDomain()) &&
                             StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
                         validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
