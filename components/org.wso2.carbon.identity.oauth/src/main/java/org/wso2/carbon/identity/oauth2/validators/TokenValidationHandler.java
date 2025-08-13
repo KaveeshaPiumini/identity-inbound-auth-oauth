@@ -582,7 +582,12 @@ public class TokenValidationHandler {
                         validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
                     } else if (!tenantDomain.equalsIgnoreCase(accessTokenDO.getAuthzUser().getTenantDomain()) &&
                             !StringUtils.equalsIgnoreCase(accessTokenDO.getAuthzUser().getUserResidentOrganization(),
-                                    accessTokenDO.getAuthzUser().getAccessingOrganization())) {
+                                    accessTokenDO.getAuthzUser().getAccessingOrganization()) &&
+                            OAuthComponentServiceHolder.getInstance().getOrganizationManager()
+                                    .getAncestorOrganizationIds(
+                                            accessTokenDO.getAuthzUser().getAccessingOrganization()).contains(
+                                                    accessTokenDO.getAuthzUser().getUserResidentOrganization())
+                            ) {
                         validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
                     }
                 }
