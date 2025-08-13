@@ -557,8 +557,7 @@ public class TokenValidationHandler {
                         StringUtils.isEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
                     throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
                 }
-                // If not a fragment app, tenantDomain should be the same as the app tenant domain. Else, it should be
-                // the tenant domain of the application-created organization.
+                // Handle sub-org token introspection scenarios.
                 if (!isCrossTenantTokenIntrospectionAllowed || !isCrossSubOrgTokenIntrospectionAllowed) {
                     if (!isFragmentApp &&
                             tenantDomain.equalsIgnoreCase(appTenantDomain) &&
@@ -566,20 +565,6 @@ public class TokenValidationHandler {
                         validateTokenIntrospectionForSubOrgs(
                                 OAuthComponentServiceHolder.getInstance().getOrganizationManager()
                                         .resolveOrganizationId(accessTokenDO.getAuthzUser().getTenantDomain()));
-                    } else if (!isFragmentApp &&
-                            tenantDomain.equalsIgnoreCase(appTenantDomain) &&
-                            StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization()) &&
-                            OrganizationManagementUtil.isOrganization(appTenantDomain)) {
-                        validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
-                    } else if (!isFragmentApp && !tenantDomain.equalsIgnoreCase(
-                            accessTokenDO.getAuthzUser().getTenantDomain()) &&
-                            StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization()) &&
-                            OrganizationManagementUtil.isOrganization(appTenantDomain)) {
-                        validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
-                    } else if (isFragmentApp && !tenantDomain.equalsIgnoreCase(
-                            accessTokenDO.getAuthzUser().getTenantDomain()) &&
-                            StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
-                        validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
                     } else if (!tenantDomain.equalsIgnoreCase(accessTokenDO.getAuthzUser().getTenantDomain()) &&
                             !StringUtils.equalsIgnoreCase(accessTokenDO.getAuthzUser().getUserResidentOrganization(),
                                     accessTokenDO.getAuthzUser().getAccessingOrganization()) &&
@@ -1014,6 +999,9 @@ public class TokenValidationHandler {
 
         String introspectingTenant = IdentityTenantUtil.getTenant(
                 PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId()).getAssociatedOrganizationUUID();
+        if (introspectingTenant != null && introspectingTenant.equals(accessingOrganization)) {
+            return;
+        }
         if (introspectingTenant != null && !introspectingTenant.equalsIgnoreCase(
                 OAuthComponentServiceHolder.getInstance().getOrganizationManager()
                         .getPrimaryOrganizationId(accessingOrganization))) {
