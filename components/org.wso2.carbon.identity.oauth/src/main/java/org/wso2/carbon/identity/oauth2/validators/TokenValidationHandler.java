@@ -568,9 +568,15 @@ public class TokenValidationHandler {
                                         .resolveOrganizationId(accessTokenDO.getAuthzUser().getTenantDomain()));
                     } else if (!isFragmentApp &&
                             tenantDomain.equalsIgnoreCase(appTenantDomain) &&
-                            StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
+                            StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization()) &&
+                            OrganizationManagementUtil.isOrganization(appTenantDomain)) {
                         validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
-                    } else if (!tenantDomain.equalsIgnoreCase(
+                    } else if (!isFragmentApp && !tenantDomain.equalsIgnoreCase(
+                            accessTokenDO.getAuthzUser().getTenantDomain()) &&
+                            StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization()) &&
+                            OrganizationManagementUtil.isOrganization(appTenantDomain)) {
+                        validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
+                    } else if (isFragmentApp && !tenantDomain.equalsIgnoreCase(
                             accessTokenDO.getAuthzUser().getTenantDomain()) &&
                             StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
                         validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
