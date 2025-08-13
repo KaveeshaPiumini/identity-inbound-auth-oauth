@@ -580,6 +580,10 @@ public class TokenValidationHandler {
                             accessTokenDO.getAuthzUser().getTenantDomain()) &&
                             StringUtils.isNotEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
                         validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
+                    } else if (!tenantDomain.equalsIgnoreCase(accessTokenDO.getAuthzUser().getTenantDomain()) &&
+                            !StringUtils.equalsIgnoreCase(accessTokenDO.getAuthzUser().getUserResidentOrganization(),
+                                    accessTokenDO.getAuthzUser().getAccessingOrganization())) {
+                        validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
                     }
                 }
                 List<String> allowedScopes = OAuthServerConfiguration.getInstance().getAllowedScopes();
