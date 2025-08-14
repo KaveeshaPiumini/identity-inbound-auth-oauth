@@ -52,7 +52,6 @@ import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementServerException;
-import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.utils.DiagnosticLog;
 
 import java.util.ArrayList;
@@ -535,33 +534,11 @@ public class TokenValidationHandler {
 
                 boolean isCrossTenantTokenIntrospectionAllowed
                         = OAuthServerConfiguration.getInstance().isCrossTenantTokenIntrospectionAllowed();
-                boolean isCrossSubOrgTokenIntrospectionAllowed
-                        = OAuthServerConfiguration.getInstance().isCrossSubOrgTokenIntrospectionAllowed();
                 if (!isCrossTenantTokenIntrospectionAllowed && accessTokenDO != null &&
                         !tenantDomain.equalsIgnoreCase(accessTokenDO.getAuthzUser().getTenantDomain()) &&
                         StringUtils.isEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
                     throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
                 }
-                
-                // Handle sub-org token introspection scenarios.
-                // if (!isCrossTenantTokenIntrospectionAllowed || !isCrossSubOrgTokenIntrospectionAllowed) {
-                //     if (!isFragmentApp &&
-                //             tenantDomain.equalsIgnoreCase(appTenantDomain) &&
-                //             OrganizationManagementUtil.isOrganization(appTenantDomain)) {
-                //         validateTokenIntrospectionForSubOrgs(
-                //                 OAuthComponentServiceHolder.getInstance().getOrganizationManager()
-                //                         .resolveOrganizationId(accessTokenDO.getAuthzUser().getTenantDomain()));
-                //     } else if (!tenantDomain.equalsIgnoreCase(accessTokenDO.getAuthzUser().getTenantDomain()) &&
-                //             !StringUtils.equalsIgnoreCase(accessTokenDO.getAuthzUser().getUserResidentOrganization(),
-                //                     accessTokenDO.getAuthzUser().getAccessingOrganization()) &&
-                //             OAuthComponentServiceHolder.getInstance().getOrganizationManager()
-                //                     .getAncestorOrganizationIds(
-                //                             accessTokenDO.getAuthzUser().getAccessingOrganization()).contains(
-                //                                     accessTokenDO.getAuthzUser().getUserResidentOrganization())
-                //             ) {
-                //         validateTokenIntrospectionForSubOrgs(accessTokenDO.getAuthzUser().getAccessingOrganization());
-                //     }
-                // }
                 
                 List<String> allowedScopes = OAuthServerConfiguration.getInstance().getAllowedScopes();
                 String[] requestedScopes = accessTokenDO.getScope();
