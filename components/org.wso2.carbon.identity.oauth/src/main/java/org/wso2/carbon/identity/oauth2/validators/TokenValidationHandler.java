@@ -585,9 +585,6 @@ public class TokenValidationHandler {
                     LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
                 }
                 return buildIntrospectionErrorResponse(e.getMessage());
-            } catch (OrganizationManagementException e) {
-                throw new IdentityOAuth2Exception("Error while checking whether the application tenant is an " +
-                        "organization.", e);
             }
 
             if (hasAccessTokenExpired(accessTokenDO)) {
