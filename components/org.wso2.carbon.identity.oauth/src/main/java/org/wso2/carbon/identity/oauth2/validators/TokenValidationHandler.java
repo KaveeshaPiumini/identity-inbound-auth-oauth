@@ -538,6 +538,9 @@ public class TokenValidationHandler {
                         !tenantDomain.equalsIgnoreCase(accessTokenDO.getAuthzUser().getTenantDomain()) &&
                         StringUtils.isEmpty(accessTokenDO.getAuthzUser().getAccessingOrganization())) {
                     throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
+                } else if (accessTokenDO != null && StringUtils.isNotEmpty(
+                        accessTokenDO.getAuthzUser().getAccessingOrganization())) {
+                    validateIntrospectionForSubOrgTokens(tenantDomain, accessTokenDO);
                 }
                 
                 List<String> allowedScopes = OAuthServerConfiguration.getInstance().getAllowedScopes();
@@ -562,6 +565,9 @@ public class TokenValidationHandler {
                     LoggerUtils.triggerDiagnosticLogEvent(diagnosticLogBuilder);
                 }
                 return buildIntrospectionErrorResponse(e.getMessage());
+            } catch (OrganizationManagementException e) {
+                throw new IdentityOAuth2Exception("Error while checking whether the application tenant is an " +
+                        "organization.", e);
             }
 
             if (hasAccessTokenExpired(accessTokenDO)) {
@@ -955,18 +961,21 @@ public class TokenValidationHandler {
         }
     }
 
-    private void validateTokenIntrospectionForSubOrgs(String accessingOrganization)
-            throws OrganizationManagementServerException {
+    private void validateIntrospectionForSubOrgTokens(String tenantDomain, AccessTokenDO accessTokenDO)
+            throws OrganizationManagementException {
 
-        String introspectingTenant = IdentityTenantUtil.getTenant(
-                PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId()).getAssociatedOrganizationUUID();
-        if (introspectingTenant != null && introspectingTenant.equals(accessingOrganization)) {
-            return;
-        }
-        if (introspectingTenant != null && !introspectingTenant.equalsIgnoreCase(
-                OAuthComponentServiceHolder.getInstance().getOrganizationManager()
-                        .getPrimaryOrganizationId(accessingOrganization))) {
-            throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
+        String appTenantDomain = IdentityTenantUtil.getTenantDomain(accessTokenDO.getTenantID());
+        String orgIdOfIntrospectingTenant = OAuthComponentServiceHolder.getInstance().getOrganizationManager()
+                .resolveOrganizationId(tenantDomain);
+        String orgIdOfAppTenantDomain = OAuthComponentServiceHolder.getInstance().getOrganizationManager()
+                .resolveOrganizationId(appTenantDomain);
+
+        if (!appTenantDomain.equalsIgnoreCase(tenantDomain)) {
+            if (orgIdOfIntrospectingTenant != null && !orgIdOfIntrospectingTenant.equalsIgnoreCase(
+                    OAuthComponentServiceHolder.getInstance().getOrganizationManager()
+                            .getPrimaryOrganizationId(orgIdOfAppTenantDomain))) {
+                throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
+            }
         }
     }
 }
